@@ -749,7 +749,7 @@ func makeImageThumbnails(dir string, name string) {
 }
 
 func makeIconThumbnails(dir string, name string) {
-	m := regexp.MustCompile("^([0-9a-f]+)(_(?:s|m|l))?.png$").FindStringSubmatch(name)
+	m := regexp.MustCompile("^([0-9a-z]+)(_(?:s|m|l))?.png$").FindStringSubmatch(name)
 	if m == nil {
 		return
 	}
