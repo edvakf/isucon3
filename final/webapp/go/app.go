@@ -269,6 +269,49 @@ func cropSquare(orig string, ext string) (string, error) {
 	return newFile, nil
 }
 
+func convertImage(orig string, target string, w int, h int) {
+	cmd := exec.Command("convert", "-quality", "64", "-define", fmt.Sprintf("jpeg:size=%dx%d", w, h), "-geometry", fmt.Sprintf("%dx%d", w, h), orig, target)
+	if err := cmd.Run(); err != nil {
+		panic(err.Error())
+	}
+}
+
+func makeImageThumbnails(dir string, name string) {
+	m := regexp.MustCompile("^([0-9a-f]+)(_(?:s|m|l))?.jpg$").FindStringSubmatch(name)
+	if m == nil {
+		return
+	}
+	if m[2] != "" {
+		return
+	}
+
+	hash := m[1]
+	sizes := []string{"s", "m"}
+	for _, size := range sizes {
+		target := fmt.Sprintf("%s/%s_%s.jpg", dir, hash, size)
+		if FileExists(target) {
+			log.Printf("%s exists", target)
+			continue
+		}
+		orig := fmt.Sprintf("%s/%s", dir, name)
+		square, err := cropSquare(orig, "jpg")
+		if err != nil {
+			panic(err.Error())
+		}
+		switch size {
+		case "s":
+			convertImage(square, target, imageS, imageS)
+		case "m":
+			convertImage(square, target, imageM, imageM)
+		}
+	}
+}
+
+func FileExists(name string) bool {
+	_, err := os.Stat(name)
+	return !os.IsNotExist(err)
+}
+
 func renderJson(w http.ResponseWriter, r Response) {
 	w.Header().Set("Content-Type", "application/json")
 	fmt.Fprint(w, r)
@@ -382,6 +425,8 @@ func entryHandler(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+
+	makeImageThumbnails(config.Datadir+"/image", imageId+".jpg")
 
 	publishLevel := r.FormValue("publish_level")
 	result, err := dbConn.Exec(
