@@ -343,7 +343,7 @@ func meHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func entryHandler(w http.ResponseWriter, r *http.Request) {
-	baseUrl := prepareHandler(w, r)
+	_ = prepareHandler(w, r)
 
 	user, err := getUser(r)
 	if err != nil {
@@ -413,7 +413,7 @@ func entryHandler(w http.ResponseWriter, r *http.Request) {
 
 	renderJson(w, Response{
 		"id":            entry.Id,
-		"image":         baseUrl.String() + "/image/" + entry.Image,
+		"image":         imageUrl(entry.Image),
 		"publish_level": entry.PublishLevel,
 		"user": Response{
 			"id":   user.Id,
@@ -424,7 +424,7 @@ func entryHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func timelineHandler(w http.ResponseWriter, r *http.Request) {
-	baseUrl := prepareHandler(w, r)
+	_ = prepareHandler(w, r)
 
 	user, err := getUser(r)
 	if err != nil {
@@ -492,7 +492,7 @@ func timelineHandler(w http.ResponseWriter, r *http.Request) {
 					}
 					res = append(res, Response{
 						"id":            entry.Id,
-						"image":         baseUrl.String() + "/image/" + entry.Image,
+						"image":         imageUrl(entry.Image),
 						"publish_level": entry.PublishLevel,
 						"user": Response{
 							"id":   user.Id,
@@ -737,6 +737,10 @@ func getFollowing(w http.ResponseWriter, user *User, baseUrl *url.URL) {
 
 func iconUrl(icon string) string {
 	return getImageUrlBase(icon) + "/icon/" + icon
+}
+
+func imageUrl(image string) string {
+	return getImageUrlBase(image) + "/image/" + image
 }
 
 func getImageUrlBase(key string) string {
