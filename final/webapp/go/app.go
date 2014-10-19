@@ -671,40 +671,20 @@ func imageHandler(w http.ResponseWriter, r *http.Request) {
 		size = "l"
 	}
 
-	var width, height int
-	if size == "s" {
-		width = imageS
-	} else if size == "m" {
-		width = imageM
-	} else if size == "l" {
-		width = imageL
+	var target string
+	if size == "l" {
+		target = fmt.Sprintf("%s/image/%s.jpg", config.Datadir, image)
 	} else {
-		width = imageL
+		target = fmt.Sprintf("%s/image/%s_%s.jpg", config.Datadir, image, size)
 	}
-	height = width
 
 	var data []byte
-	if 0 <= width {
-		path, err := cropSquare(config.Datadir+"/image/"+image+".jpg", "jpg")
-		defer os.Remove(path)
-		if err != nil {
-			serverError(w, err)
-			return
-		}
-		b, err := convert(path, "jpg", width, height)
-		if err != nil {
-			serverError(w, err)
-			return
-		}
-		data = b
-	} else {
-		b, err := ioutil.ReadFile(config.Datadir + "/image/" + image + ".jpg")
-		if err != nil {
-			serverError(w, err)
-			return
-		}
-		data = b
+	b, err := ioutil.ReadFile(target)
+	if err != nil {
+		serverError(w, err)
+		return
 	}
+	data = b
 
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Write(data)
