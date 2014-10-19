@@ -616,7 +616,7 @@ func iconHandler(w http.ResponseWriter, r *http.Request) {
 	var target string
 	switch size {
 	case "m":
-		target = fmt.Sprintf("%s/icon/%s_s.png", config.Datadir, icon)
+		target = fmt.Sprintf("%s/icon/%s_m.png", config.Datadir, icon)
 	case "l":
 		target = fmt.Sprintf("%s/icon/%s_l.png", config.Datadir, icon)
 	default:
