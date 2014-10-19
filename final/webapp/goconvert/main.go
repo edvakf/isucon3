@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"regexp"
 	"strconv"
+	"sync"
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -141,9 +142,29 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	for _, f := range files {
-		makeImageThumbnails(imageDir, f.Name())
+
+	parallel := 4
+
+	ch := make(chan string, parallel)
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	for n := 0; n < parallel; n++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for name := range ch {
+				makeImageThumbnails(imageDir, name)
+			}
+		}()
 	}
+
+	for _, f := range files {
+		ch <- f.Name()
+	}
+	close(ch)
+
 }
 
 func serverError(w http.ResponseWriter, err error) {
