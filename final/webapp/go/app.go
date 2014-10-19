@@ -635,7 +635,6 @@ func iconHandler(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
-	makeIconThumbnails(config.Datadir+"/icon", icon+".png")
 
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(data)
@@ -947,6 +946,7 @@ func updateIconHandler(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	makeIconThumbnails(config.Datadir+"/icon", iconId+".png")
 
 	_, err = dbConn.Exec(
 		"UPDATE users SET icon = ? WHERE id = ?",
