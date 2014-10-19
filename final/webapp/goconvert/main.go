@@ -665,7 +665,7 @@ func imageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func convertImage(orig string, target string, w int, h int) {
-	cmd := exec.Command("convert", "-geometry", fmt.Sprintf("%dx%d", w, h), orig, target)
+	cmd := exec.Command("convert", "-quality", "64", "-define", fmt.Sprintf("jepg:size=%dx%d", w, h), "-geometry", fmt.Sprintf("%dx%d", w, h), orig, target)
 	if err := cmd.Run(); err != nil {
 		panic(err.Error())
 	}
