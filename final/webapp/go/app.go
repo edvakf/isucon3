@@ -613,28 +613,23 @@ func iconHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	size := r.FormValue("size")
-	if size == "" {
-		size = "s"
+	var target string
+	switch size {
+	case "m":
+		target = fmt.Sprintf("%s/icon/%s_s.png", config.Datadir, icon)
+	case "l":
+		target = fmt.Sprintf("%s/icon/%s_l.png", config.Datadir, icon)
+	default:
+		target = fmt.Sprintf("%s/icon/%s_s.png", config.Datadir, icon)
 	}
 
-	var width int
-	var height int
-	if size == "s" {
-		width = iconS
-	} else if size == "m" {
-		width = iconM
-	} else if size == "l" {
-		width = iconL
-	} else {
-		width = iconS
-	}
-	height = width
-
-	data, err := convert(config.Datadir+"/icon/"+icon+".png", "png", width, height)
+	var data []byte
+	b, err := ioutil.ReadFile(target)
 	if err != nil {
 		serverError(w, err)
 		return
 	}
+	data = b
 
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(data)
