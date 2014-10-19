@@ -137,7 +137,7 @@ func loadConfig(filename string) *Config {
 }
 
 func main() {
-	imageDir := "/tmp/edv_tmpimg"
+	imageDir := "/home/isucon/isucon3/final/webapp/data/image"
 	files, err := ioutil.ReadDir(imageDir)
 	if err != nil {
 		panic(err.Error())
