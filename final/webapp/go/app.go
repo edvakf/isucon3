@@ -9,6 +9,7 @@ import (
 	"fmt"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
+	"hash/fnv"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -281,7 +282,7 @@ func renderJsonNoCache(w http.ResponseWriter, r Response) {
 }
 
 func signupHandler(w http.ResponseWriter, r *http.Request) {
-	baseUrl := prepareHandler(w, r)
+	_ = prepareHandler(w, r)
 
 	name := r.FormValue("name")
 
@@ -317,12 +318,12 @@ func signupHandler(w http.ResponseWriter, r *http.Request) {
 		"id":      user.Id,
 		"name":    user.Name,
 		"api_key": user.Apikey,
-		"icon":    baseUrl.String() + "/icon/" + user.Icon,
+		"icon":    iconUrl(user.Icon),
 	})
 }
 
 func meHandler(w http.ResponseWriter, r *http.Request) {
-	baseUrl := prepareHandler(w, r)
+	_ = prepareHandler(w, r)
 
 	user, err := getUser(r)
 	if err != nil {
@@ -337,7 +338,7 @@ func meHandler(w http.ResponseWriter, r *http.Request) {
 	renderJson(w, Response{
 		"id":   user.Id,
 		"name": user.Name,
-		"icon": baseUrl.String() + "/icon/" + user.Icon,
+		"icon": iconUrl(user.Icon),
 	})
 }
 
@@ -417,7 +418,7 @@ func entryHandler(w http.ResponseWriter, r *http.Request) {
 		"user": Response{
 			"id":   user.Id,
 			"name": user.Name,
-			"icon": baseUrl.String() + "/icon/" + user.Icon,
+			"icon": iconUrl(user.Icon),
 		},
 	})
 }
@@ -496,7 +497,7 @@ func timelineHandler(w http.ResponseWriter, r *http.Request) {
 						"user": Response{
 							"id":   user.Id,
 							"name": user.Name,
-							"icon": baseUrl.String() + "/icon/" + user.Icon,
+							"icon": iconUrl(user.Icon),
 						},
 					})
 				}
@@ -726,12 +727,26 @@ func getFollowing(w http.ResponseWriter, user *User, baseUrl *url.URL) {
 		res = append(res, Response{
 			"id":   u.Id,
 			"name": u.Name,
-			"icon": baseUrl.String() + "/icon/" + u.Icon,
+			"icon": iconUrl(u.Icon),
 		})
 	}
 	rows.Close()
 
 	renderJsonNoCache(w, Response{"users": res})
+}
+
+func iconUrl(icon string) string {
+	return getImageUrlBase(icon) + "/icon/" + icon
+}
+
+func getImageUrlBase(key string) string {
+	return "http://" + getImageHost(key);
+}
+
+func getImageHost(key string) string {
+	h := fnv.New64a()
+	h.Write([]byte(key))
+	return fmt.Sprintf("isu3app%d", h.Sum64() % 2 + 3)
 }
 
 func followingHandler(w http.ResponseWriter, r *http.Request) {
@@ -822,7 +837,7 @@ func unfollowHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func updateIconHandler(w http.ResponseWriter, r *http.Request) {
-	baseUrl := prepareHandler(w, r)
+	_ = prepareHandler(w, r)
 
 	user, err := getUser(r)
 	if err != nil {
@@ -898,5 +913,5 @@ func updateIconHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderJson(w, Response{"icon": baseUrl.String() + "/icon/" + iconId})
+	renderJson(w, Response{"icon": iconUrl(iconId)})
 }
