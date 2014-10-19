@@ -307,6 +307,38 @@ func makeImageThumbnails(dir string, name string) {
 	}
 }
 
+func makeIconThumbnails(dir string, name string) {
+	m := regexp.MustCompile("^([0-9a-f]+)(_(?:s|m|l))?.png$").FindStringSubmatch(name)
+	if m == nil {
+		return
+	}
+	if m[2] != "" {
+		return
+	}
+
+	hash := m[1]
+	sizes := []string{"s", "m", "l"}
+	for _, size := range sizes {
+		target := fmt.Sprintf("%s/%s_%s.png", dir, hash, size)
+		if FileExists(target) {
+			log.Printf("%s exists", target)
+			continue
+		}
+		orig := fmt.Sprintf("%s/%s", dir, name)
+		switch size {
+		case "s":
+			log.Printf("making size %s: %s", size, target)
+			convertImage(orig, target, iconS, iconS)
+		case "m":
+			log.Printf("making size %s: %s", size, target)
+			convertImage(orig, target, iconM, iconM)
+		case "l":
+			log.Printf("making size %s: %s", size, target)
+			convertImage(orig, target, iconL, iconL)
+		}
+	}
+}
+
 func FileExists(name string) bool {
 	_, err := os.Stat(name)
 	return !os.IsNotExist(err)
@@ -603,6 +635,8 @@ func iconHandler(w http.ResponseWriter, r *http.Request) {
 		serverError(w, err)
 		return
 	}
+	makeIconThumbnails(config.Datadir+"/icon", icon+".png")
+
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(data)
 }

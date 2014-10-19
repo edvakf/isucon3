@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -136,9 +137,24 @@ func loadConfig(filename string) *Config {
 	return &config
 }
 
+var imgconvdir = flag.String("imgconvdir", "", "directory to convert images")
+var iconconvdir = flag.String("iconconvdir", "", "directory to convert images")
+
 func main() {
-	imageDir := "/home/isucon/isucon3/final/webapp/data/image"
-	files, err := ioutil.ReadDir(imageDir)
+	flag.Parse()
+	if *imgconvdir != "" {
+		log.Printf("convert image in directory %s", *imgconvdir)
+		convertImages(*imgconvdir)
+	}
+	if *iconconvdir != "" {
+		log.Printf("convert icons in directory %s", *iconconvdir)
+		convertIcons(*iconconvdir)
+	}
+	log.Printf("done")
+}
+
+func convertImages(imgDir string) {
+	files, err := ioutil.ReadDir(imgDir)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -155,7 +171,7 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for name := range ch {
-				makeImageThumbnails(imageDir, name)
+				makeImageThumbnails(imgDir, name)
 			}
 		}()
 	}
@@ -164,7 +180,35 @@ func main() {
 		ch <- f.Name()
 	}
 	close(ch)
+}
 
+func convertIcons(imgDir string) {
+	files, err := ioutil.ReadDir(imgDir)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	parallel := 4
+
+	ch := make(chan string, parallel)
+
+	var wg sync.WaitGroup
+	defer wg.Wait()
+
+	for n := 0; n < parallel; n++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for name := range ch {
+				makeIconThumbnails(imgDir, name)
+			}
+		}()
+	}
+
+	for _, f := range files {
+		ch <- f.Name()
+	}
+	close(ch)
 }
 
 func serverError(w http.ResponseWriter, err error) {
@@ -700,6 +744,38 @@ func makeImageThumbnails(dir string, name string) {
 		case "m":
 			log.Printf("making size %s: %s", size, target)
 			convertImage(square, target, imageM, imageM)
+		}
+	}
+}
+
+func makeIconThumbnails(dir string, name string) {
+	m := regexp.MustCompile("^([0-9a-f]+)(_(?:s|m|l))?.png$").FindStringSubmatch(name)
+	if m == nil {
+		return
+	}
+	if m[2] != "" {
+		return
+	}
+
+	hash := m[1]
+	sizes := []string{"s", "m", "l"}
+	for _, size := range sizes {
+		target := fmt.Sprintf("%s/%s_%s.png", dir, hash, size)
+		if FileExists(target) {
+			log.Printf("%s exists", target)
+			continue
+		}
+		orig := fmt.Sprintf("%s/%s", dir, name)
+		switch size {
+		case "s":
+			log.Printf("making size %s: %s", size, target)
+			convertImage(orig, target, iconS, iconS)
+		case "m":
+			log.Printf("making size %s: %s", size, target)
+			convertImage(orig, target, iconM, iconM)
+		case "l":
+			log.Printf("making size %s: %s", size, target)
+			convertImage(orig, target, iconL, iconL)
 		}
 	}
 }
